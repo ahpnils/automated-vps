@@ -1,0 +1,165 @@
+---
+# tasks file for vps
+- name: Install podman
+  ansible.builtin.package:
+    name: podman
+    state: latest
+
+# While the following bug from the podman module is not solved, I can't 
+# mount volumes with SELinux in Enforcing mode.
+# https://github.com/containers/ansible-podman-collections/issues/102
+- name: Put SELinux in permissive mode, logging actions that would be blocked.
+  ansible.posix.selinux:
+    policy: targeted
+    state: permissive
+
+- name: create http front podman network
+  containers.podman.podman_network:
+    name: http_front
+    internal: true
+    ip_range: 10.13.38.0/25
+    subnet: 10.13.38.0/24
+    gateway: 10.13.38.1
+
+- name: create podman base volumes directory
+  ansible.builtin.file:
+    path: "{{ container_volumes_base_dir }}"
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+    force: yes
+
+- name: create podman volumes directories
+  ansible.builtin.file:
+    path: "{{ container_volumes_base_dir }}/{{ item }}"
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+    force: yes
+  loop:
+    - "reverse_proxy"
+    - "site1"
+    - "site2"
+
+- name: create site1 directories
+  ansible.builtin.file:
+    path: "{{ container_volumes_base_dir }}/site1/{{ item }}"
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+    force: yes
+  loop:
+    - "conf.d"
+    - "docroot"
+    - "log"
+
+- name: create site2 directories
+  ansible.builtin.file:
+    path: "{{ container_volumes_base_dir }}/site2/{{ item }}"
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+    force: yes
+  loop:
+    - "conf.d"
+    - "docroot"
+    - "log"
+
+- name: create reverse-proxy directories
+  ansible.builtin.file:
+    path: "{{ container_volumes_base_dir }}/reverse_proxy/{{ item }}"
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+    force: yes
+  loop:
+    - "conf.d"
+    - "docroot"
+    - "log"
+
+- name: Run Nginx site1 container
+  containers.podman.podman_container:
+    name: nginx_site1
+    image: docker.io/library/nginx
+    state: started
+    ip: "10.88.80.1"
+    recreate: yes
+    #subuidname: nils
+    #subgidname: nils
+    volume: 
+      - "{{ container_volumes_base_dir }}/site1/docroot:/usr/share/nginx/html"
+      - "{{ container_volumes_base_dir }}/site1/log:/var/log/nginx"
+      #- "{{ container_volumes_base_dir }}/site1/conf.d:/etc/nginx/conf.d"
+    #ports:
+    #- "8081:80"
+    generate_systemd:
+      path: /etc/systemd/system/
+      restart_policy: always
+      names: true
+      container_prefix: container
+  notify: start nginx_site1
+
+- name: Run Nginx site2 container
+  containers.podman.podman_container:
+    name: nginx_site2
+    image: docker.io/library/nginx
+    state: started
+    ip: "10.88.80.2"
+    recreate: yes
+    #subuidname: nils
+    #subgidname: nils
+    volume: 
+      - "{{ container_volumes_base_dir }}/site2/docroot:/usr/share/nginx/html"
+      - "{{ container_volumes_base_dir }}/site2/log:/var/log/nginx"
+      #- "{{ container_volumes_base_dir }}/site2/conf.d:/etc/nginx/conf.d"
+    #ports:
+    #- "8081:80"
+    generate_systemd:
+      path: /etc/systemd/system/
+      restart_policy: always
+      names: true
+      container_prefix: container
+  notify: start nginx_site2
+
+- name: Run Nginx Reverse-proxy container
+  containers.podman.podman_container:
+    name: reverse_proxy
+    image: docker.io/library/nginx
+    state: started
+    #pod: "new:web"
+    recreate: yes
+    #subuidname: nils
+    #subgidname: nils
+    #network:
+    #  - "http_front"
+    #ip: "10.13.38.2"
+    ip: "10.88.80.254"
+    volume: 
+      - "{{ container_volumes_base_dir }}/reverse_proxy/docroot:/usr/share/nginx/html"
+      - "{{ container_volumes_base_dir }}/reverse_proxy/log:/var/log/nginx"
+      - "{{ container_volumes_base_dir }}/reverse_proxy/conf.d:/etc/nginx/conf.d"
+    ports:
+      - "80:80"
+    generate_systemd:
+      path: /etc/systemd/system/
+      restart_policy: always
+      names: true
+      container_prefix: container
+  notify: start reverse_proxy
+
+- name: Enable service container-nginx_site1
+  ansible.builtin.systemd:
+    name: container-nginx_site1
+    daemon_reload: yes
+    enabled: yes
+
+- name: Enable service container-reverse_proxy
+  ansible.builtin.systemd:
+    name: container-reverse_proxy
+    daemon_reload: yes
+    enabled: yes

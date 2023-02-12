@@ -1,0 +1,3 @@
+---
+# vars file for vps
+container_volumes_base_dir: /srv/containers

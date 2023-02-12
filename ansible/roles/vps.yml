@@ -1,0 +1,6 @@
+---
+- name: Installs and configure a custom VPS
+  hosts: node0
+
+  roles:
+    - vps
