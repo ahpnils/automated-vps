@@ -1,3 +1,37 @@
 ---
 # vars file for vps
 container_volumes_base_dir: /srv/containers
+
+volume_directory:
+  - "conf.d"
+  - "docroot"
+  - "log"
+
+containers:
+  - name: site1
+    image: docker.io/library/nginx
+    ip: 10.88.80.1
+    recreate: yes
+    volume:
+      - "{{ container_volumes_base_dir }}/site1/docroot:/usr/share/nginx/html"
+      - "{{ container_volumes_base_dir }}/site1/log:/var/log/nginx"
+      #- "{{ container_volumes_base_dir }}/site1/conf.d:/etc/nginx/conf.d"
+  - name: site2
+    image: docker.io/library/nginx
+    ip: 10.88.80.2
+    recreate: yes
+    volume:
+      - "{{ container_volumes_base_dir }}/site2/docroot:/usr/share/nginx/html"
+      - "{{ container_volumes_base_dir }}/site2/log:/var/log/nginx"
+      #- "{{ container_volumes_base_dir }}/site2/conf.d:/etc/nginx/conf.d"
+  - name: reverse_proxy
+    image: docker.io/library/nginx
+    ip: 10.88.80.254
+    recreate: yes
+    ports:
+      - "80:80"
+    volume:
+      - "{{ container_volumes_base_dir }}/reverse_proxy/docroot:/usr/share/nginx/html"
+      - "{{ container_volumes_base_dir }}/reverse_proxy/log:/var/log/nginx"
+      - "{{ container_volumes_base_dir }}/reverse_proxy/conf.d:/etc/nginx/conf.d"
+
