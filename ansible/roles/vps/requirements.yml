@@ -1,2 +1,4 @@
 collections:
 - name: containers.podman
+roles:
+- name: nginxinc.nginx_config

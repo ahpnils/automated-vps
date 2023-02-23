@@ -3,9 +3,8 @@
 - name: Install podman
   ansible.builtin.package:
     name: podman
-    state: latest
 
-# While the following bug from the podman module is not solved, I can't 
+# While the following bug from the podman module is not solved, I can't
 # mount volumes with SELinux in Enforcing mode.
 # https://github.com/containers/ansible-podman-collections/issues/102
 - name: Put SELinux in permissive mode, logging actions that would be blocked.
@@ -13,7 +12,7 @@
     policy: targeted
     state: permissive
 
-- name: create http front podman network
+- name: Create http front podman network
   containers.podman.podman_network:
     name: http_front
     internal: true
@@ -21,24 +20,24 @@
     subnet: 10.13.38.0/24
     gateway: 10.13.38.1
 
-- name: create podman base volumes directory
+- name: Create podman base volumes directory
   ansible.builtin.file:
     path: "{{ container_volumes_base_dir }}"
     state: directory
     mode: 0755
     owner: root
     group: root
-    force: yes
+    force: true
 
-- name: create podman volumes directories
+- name: Create podman volumes directories
   ansible.builtin.file:
     path: "{{ container_volumes_base_dir }}/{{ item.0.name }}/{{ item.1 }}"
     state: directory
     mode: 0755
     owner: root
     group: root
-    force: yes
-  loop: "{{ containers|zip(volume_directory)|list }}"
+    force: true
+  loop: "{{ containers | zip(volume_directory) | list }}"
 
 - name: Run containers list
   containers.podman.podman_container:
@@ -47,8 +46,8 @@
     state: started
     ip: "{{ item.ip }}"
     recreate: "{{ item.recreate }}"
-    #subuidname: nils
-    #subgidname: nils
+    # subuidname: nils
+    # subgidname: nils
     ports: "{{ item.ports | default([\"\"]) }}"
     volume: "{{ item.volume }}"
     generate_systemd:
@@ -56,13 +55,42 @@
       restart_policy: always
       names: true
       container_prefix: container
-    #notify: start nginx_site1
+      # notify: start nginx_site1
   loop: "{{ containers }}"
 
 - name: Enable container services
   ansible.builtin.systemd:
     name: "container-{{ item.name }}"
-    daemon_reload: yes
-    enabled: yes
+    daemon_reload: true
+    enabled: true
   loop: "{{ containers }}"
 
+- name: Main Nginx configuration on reverse_proxy
+  import_role:
+    name: nginxinc.nginx_config
+  vars:
+    # nginx_config_http_template_enable: true
+    # nginx_config_http_template:
+    nginx_config_main_template_enable: true
+    nginx_config_main_template:
+      - template_file: nginx.conf.j2
+        deployment_location: "{{ container_volumes_base_dir }}/reverse_proxy/conf.d:/etc/nginx/nginx.conf"
+        backup: false
+        config:
+          main:
+            user:
+              username: nginx
+            worker_processes: auto
+            worker_connections: "1024"
+            error_log:
+              - file: /var/log/nginx/error.log
+                level: notice
+            pid: /var/run/nginx.pid
+            daemon: true
+            working_directory: "{{ container_volumes_base_dir }}/reverse_proxy/conf.d:/etc/nginx/"
+          http:
+            include:
+              - /etc/nginx/mime.types
+              - /etc/nginx/conf.d/*.conf
+            sendfile: true
+            keepalive_timeout: "65"
