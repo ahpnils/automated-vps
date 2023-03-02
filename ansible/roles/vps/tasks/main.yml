@@ -1,6 +1,8 @@
 ---
 # tasks file for vps
 - name: Install podman
+  tags:
+    - podman
   ansible.builtin.package:
     name: podman
 
@@ -8,11 +10,15 @@
 # mount volumes with SELinux in Enforcing mode.
 # https://github.com/containers/ansible-podman-collections/issues/102
 - name: Put SELinux in permissive mode, logging actions that would be blocked.
+  tags:
+    - selinux
   ansible.posix.selinux:
     policy: targeted
     state: permissive
 
 - name: Create http front podman network
+  tags:
+    - podman
   containers.podman.podman_network:
     name: http_front
     internal: true
@@ -21,6 +27,8 @@
     gateway: 10.13.38.1
 
 - name: Create podman base volumes directory
+  tags:
+    - podman
   ansible.builtin.file:
     path: "{{ container_volumes_base_dir }}"
     state: directory
@@ -30,6 +38,8 @@
     force: true
 
 - name: Create podman volumes directories
+  tags:
+    - podman
   ansible.builtin.file:
     path: "{{ container_volumes_base_dir }}/{{ item.0.name }}/{{ item.1 }}"
     state: directory
@@ -40,6 +50,8 @@
   loop: "{{ containers | zip(volume_directory) | list }}"
 
 - name: Run containers list
+  tags:
+    - podman
   containers.podman.podman_container:
     name: "{{ item.name }}"
     image: "{{ item.image }}"
@@ -59,6 +71,9 @@
   loop: "{{ containers }}"
 
 - name: Enable container services
+  tags:
+    - podman
+    - systemd
   ansible.builtin.systemd:
     name: "container-{{ item.name }}"
     daemon_reload: true
@@ -66,15 +81,26 @@
   loop: "{{ containers }}"
 
 - name: Main Nginx configuration on reverse_proxy
-  import_role:
-    name: nginxinc.nginx_config
+  tags:
+    - nginx
+  #import_role:
+  #  name: nginxinc.nginx_config
+  ansible.builtin.import_tasks:
+     file: ~/.ansible/roles/nginxinc.nginx_config/tasks/main.yml 
   vars:
     # nginx_config_http_template_enable: true
     # nginx_config_http_template:
+    role_path: ~/.ansible/roles/nginxinc.nginx_config
+    nginx_config_selinux: false
+    nginx_config_cleanup: false
+    nginx_config_upload_enable: false
+    nginx_config_upload_html_enable: false
+    nginx_config_upload_ssl_enable: false
+    
     nginx_config_main_template_enable: true
     nginx_config_main_template:
       - template_file: nginx.conf.j2
-        deployment_location: "{{ container_volumes_base_dir }}/reverse_proxy/conf.d:/etc/nginx/nginx.conf"
+        deployment_location: "{{ container_volumes_base_dir }}/reverse_proxy/conf.d/nginx.conf"
         backup: false
         config:
           main:
@@ -87,7 +113,7 @@
                 level: notice
             pid: /var/run/nginx.pid
             daemon: true
-            working_directory: "{{ container_volumes_base_dir }}/reverse_proxy/conf.d:/etc/nginx/"
+            working_directory: "{{ container_volumes_base_dir }}/reverse_proxy/conf.d"
           http:
             include:
               - /etc/nginx/mime.types
