@@ -11,7 +11,7 @@ containers:
   - name: site1
     image: docker.io/library/nginx
     ip: 10.88.80.1
-    recreate: true
+    recreate: yes
     volume:
       - "{{ container_volumes_base_dir }}/site1/docroot:/usr/share/nginx/html"
       - "{{ container_volumes_base_dir }}/site1/log:/var/log/nginx"
@@ -19,7 +19,7 @@ containers:
   - name: site2
     image: docker.io/library/nginx
     ip: 10.88.80.2
-    recreate: true
+    recreate: yes
     volume:
       - "{{ container_volumes_base_dir }}/site2/docroot:/usr/share/nginx/html"
       - "{{ container_volumes_base_dir }}/site2/log:/var/log/nginx"
@@ -27,7 +27,7 @@ containers:
   - name: reverse_proxy
     image: docker.io/library/nginx
     ip: 10.88.80.254
-    recreate: true
+    recreate: yes
     ports:
       - "80:80"
       - "443:443"

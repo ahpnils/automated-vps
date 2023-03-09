@@ -31,7 +31,7 @@ galaxy_info:
   platforms:
     - name: Fedora
       versions:
-        - all
+        - 37
   #   - 25
   # - name: SomePlatform
   #   versions:

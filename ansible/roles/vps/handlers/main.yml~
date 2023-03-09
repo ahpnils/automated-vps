@@ -1,17 +1,17 @@
 ---
 # handlers file for vps
 
-- name: Start reverse_proxy
+- name: start reverse_proxy
   ansible.builtin.service:
     name: container-reverse_proxy
     state: started
 
-- name: Start nginx_site1
+- name: start nginx_site1
   ansible.builtin.service:
     name: container-nginx_site1
     state: started
 
-- name: Start nginx_site2
+- name: start nginx_site2
   ansible.builtin.service:
     name: container-nginx_site2
     state: started
