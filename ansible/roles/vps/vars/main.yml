@@ -23,7 +23,7 @@ containers:
     volume:
       - "{{ container_volumes_base_dir }}/site2/docroot:/usr/share/nginx/html"
       - "{{ container_volumes_base_dir }}/site2/log:/var/log/nginx"
-      - "{{ container_volumes_base_dir }}/site1/conf/nginx:/etc/nginx"
+      - "{{ container_volumes_base_dir }}/site2/conf/nginx:/etc/nginx"
   - name: reverse_proxy
     image: docker.io/library/nginx
     ip: 10.88.80.254
@@ -35,3 +35,13 @@ containers:
       - "{{ container_volumes_base_dir }}/reverse_proxy/docroot:/usr/share/nginx/html"
       - "{{ container_volumes_base_dir }}/reverse_proxy/log:/var/log/nginx"
       - "{{ container_volumes_base_dir }}/reverse_proxy/conf/nginx:/etc/nginx"
+  - name: pihole
+    image: docker.io/pihole/pihole
+    ip: 10.88.80.3
+    recreate: true
+    # this port exposition is just for diag purposes
+    # don't let this go to prod !
+    ports:
+      - "8053:80"
+    volume:
+      - "{{ container_volumes_base_dir }}/pihole/log:/srv/log"
