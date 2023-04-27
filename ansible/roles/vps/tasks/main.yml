@@ -65,6 +65,9 @@
     rsync_opts:
       - "--exclude=*~"
   loop: "{{ containers }}"
+  when: "item.sync == true"
+  loop_control:
+    label: "{{ item.name }}"
 
 - name: Run containers list
   tags:

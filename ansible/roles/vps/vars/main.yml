@@ -12,6 +12,7 @@ containers:
     image: docker.io/library/nginx
     ip: 10.88.80.1
     recreate: true
+    sync: true
     volume:
       - host: "{{ container_volumes_base_dir }}/site1/docroot"
         pod: "/usr/share/nginx/html"
@@ -23,6 +24,7 @@ containers:
     image: docker.io/library/nginx
     ip: 10.88.80.2
     recreate: true
+    sync: true
     volume:
       - host: "{{ container_volumes_base_dir }}/site2/docroot"
         pod: "/usr/share/nginx/html"
@@ -34,6 +36,7 @@ containers:
     image: docker.io/library/nginx
     ip: 10.88.80.254
     recreate: true
+    sync: true
     ports:
       - "80:80"
       - "443:443"
@@ -48,6 +51,7 @@ containers:
     image: docker.io/pihole/pihole
     ip: 10.88.80.3
     recreate: true
+    sync: false
     # this port exposition is just for diag purposes
     # don't let this go to prod !
     ports:
