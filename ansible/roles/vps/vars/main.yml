@@ -13,17 +13,23 @@ containers:
     ip: 10.88.80.1
     recreate: true
     volume:
-      - "{{ container_volumes_base_dir }}/site1/docroot:/usr/share/nginx/html"
-      - "{{ container_volumes_base_dir }}/site1/log:/var/log/nginx"
-      - "{{ container_volumes_base_dir }}/site1/conf/nginx:/etc/nginx"
+      - host: "{{ container_volumes_base_dir }}/site1/docroot"
+        pod: "/usr/share/nginx/html"
+      - host: "{{ container_volumes_base_dir }}/site1/log"
+        pod: "/var/log/nginx"
+      - host: "{{ container_volumes_base_dir }}/site1/conf/nginx"
+        pod: "/etc/nginx"
   - name: site2
     image: docker.io/library/nginx
     ip: 10.88.80.2
     recreate: true
     volume:
-      - "{{ container_volumes_base_dir }}/site2/docroot:/usr/share/nginx/html"
-      - "{{ container_volumes_base_dir }}/site2/log:/var/log/nginx"
-      - "{{ container_volumes_base_dir }}/site2/conf/nginx:/etc/nginx"
+      - host: "{{ container_volumes_base_dir }}/site2/docroot"
+        pod: "/usr/share/nginx/html"
+      - host: "{{ container_volumes_base_dir }}/site2/log"
+        pod: "/var/log/nginx"
+      - host: "{{ container_volumes_base_dir }}/site2/conf/nginx"
+        pod: "/etc/nginx"
   - name: reverse_proxy
     image: docker.io/library/nginx
     ip: 10.88.80.254
@@ -32,9 +38,12 @@ containers:
       - "80:80"
       - "443:443"
     volume:
-      - "{{ container_volumes_base_dir }}/reverse_proxy/docroot:/usr/share/nginx/html"
-      - "{{ container_volumes_base_dir }}/reverse_proxy/log:/var/log/nginx"
-      - "{{ container_volumes_base_dir }}/reverse_proxy/conf/nginx:/etc/nginx"
+      - host: "{{ container_volumes_base_dir }}/reverse_proxy/docroot"
+        pod: "/usr/share/nginx/html"
+      - host: "{{ container_volumes_base_dir }}/reverse_proxy/log"
+        pod: "/var/log/nginx"
+      - host: "{{ container_volumes_base_dir }}/reverse_proxy/conf/nginx"
+        pod: "/etc/nginx"
   - name: pihole
     image: docker.io/pihole/pihole
     ip: 10.88.80.3
@@ -44,4 +53,9 @@ containers:
     ports:
       - "8053:80"
     volume:
-      - "{{ container_volumes_base_dir }}/pihole/log:/srv/log"
+      - host: "/srv/containers/pihole/conf/pihole/"
+        pod: "/etc/pihole"
+      - host: "/srv/containers/pihole/conf/dnsmasq/"
+        pod: "/etc/dnsmasq.d"
+      - host: "/srv/containers/pihole/log/"
+        pod: "/srv/log"

@@ -40,18 +40,22 @@
 - name: Create podman volumes directories
   tags:
     - podman
+    - mkdir
   ansible.builtin.file:
-    path: "{{ container_volumes_base_dir }}/{{ item.0.name }}/{{ item.1 }}"
+    path: "{{ item.1.host }}"
     state: directory
     mode: 0755
     owner: root
     group: root
-    force: true
-  loop: "{{ containers | product(volume_directory) | list }}"
+    recurse: true
+  loop: "{{ containers | subelements('volume') }}"
+  loop_control:
+    label: "{{ item.0.name }} - {{ item.1.host }}"
 
 - name: Sync configurations
   tags:
     - config
+    - sync
   ansible.posix.synchronize:
     src: "templates/{{ item.name }}/"
     dest: "{{ container_volumes_base_dir }}/{{ item.name }}/conf/"
@@ -66,22 +70,24 @@
   tags:
     - podman
   containers.podman.podman_container:
-    name: "{{ item.name }}"
-    image: "{{ item.image }}"
+    name: "{{ item.0.name }}"
+    image: "{{ item.0.image }}"
     state: started
-    ip: "{{ item.ip }}"
-    recreate: "{{ item.recreate }}"
+    ip: "{{ item.0.ip }}"
+    recreate: "{{ item.0.recreate }}"
     # subuidname: nils
     # subgidname: nils
-    ports: "{{ item.ports | default([\"\"]) }}"
-    volume: "{{ item.volume }}"
+    ports: "{{ item.0.ports | default([\"\"]) }}"
+    # volume: "{{ item.volume }}"
+    volume: "{{ item.1.host }}:{{ item.1.pod }}"
     generate_systemd:
       path: /etc/systemd/system/
       restart_policy: always
       names: true
       container_prefix: container
       # notify: start nginx_site1
-  loop: "{{ containers }}"
+  # loop: "{{ containers }}"
+  loop: "{{ containers | subelements('volume') }}"
 
 - name: Enable container services
   tags:
