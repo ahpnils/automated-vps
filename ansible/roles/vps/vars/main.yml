@@ -63,3 +63,25 @@ containers:
         pod: "/etc/dnsmasq.d"
       - host: "/srv/containers/pihole/log/"
         pod: "/srv/log"
+  - name: wg-easy
+    image: docker.io/weejewel/wg-easy
+    ip: 10.88.80.4
+    recreate: true
+    sync: false
+    privileged: true
+    cap_add: 
+      - NET_ADMIN
+      - SYS_MODULE
+    env:
+      WG_HOST: "10.88.80.4"
+      PASSWORD: "password"
+      WG_PRE_UP: "sleep 10"
+    sysctl:
+      net.ipv4.conf.all.src_valid_mark: "1"
+      net.ipv4.ip_forward: "1"
+    ports:
+      - "51820:51820/udp"
+      - "51821:51821/tcp"
+    volume:
+      - host: "/srv/containers/wg-easy/log/"
+        pod: "/srv/log"

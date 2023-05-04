@@ -80,16 +80,21 @@
     recreate: "{{ item.0.recreate }}"
     # subuidname: nils
     # subgidname: nils
+    privileged: "{{ item.0.privileged | default(false) }}"
+    # empty value of a list is []
+    cap_add: "{{ item.0.cap_add | default([\"\"]) }}"
     ports: "{{ item.0.ports | default([\"\"]) }}"
-    # volume: "{{ item.volume }}"
     volume: "{{ item.1.host }}:{{ item.1.pod }}"
+    # empty value of a dict is {}
+    env: "{{ item.0.env | default({}) }}"
+    sysctl: "{{ item.0.sysctl | default({}) }}"
     generate_systemd:
       path: /etc/systemd/system/
       restart_policy: always
       names: true
       container_prefix: container
+      #new: true
       # notify: start nginx_site1
-  # loop: "{{ containers }}"
   loop: "{{ containers | subelements('volume') }}"
 
 - name: Enable container services
