@@ -52,10 +52,10 @@ containers:
     ip: 10.88.80.3
     recreate: true
     sync: false
-    # this port exposition is just for diag purposes
+    # this port exposes the web admin
     # don't let this go to prod !
-    ports:
-      - "8053:80"
+    # ports:
+    #   - "8053:80"
     volume:
       - host: "/srv/containers/pihole/conf/pihole/"
         pod: "/etc/pihole"
@@ -81,7 +81,8 @@ containers:
       net.ipv4.ip_forward: "1"
     ports:
       - "51820:51820/udp"
-      - "51821:51821/tcp"
+      # this port is for the web admin, do not open it to public
+      # - "51821:51821/tcp"
     volume:
       - host: "/srv/containers/wg-easy/log/"
         pod: "/srv/log"
